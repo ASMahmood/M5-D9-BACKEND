@@ -1,37 +1,38 @@
 const express = require("express");
+const cartsRoutes = require("./carts");
+const fileRoutes = require("./files/upload");
+const productsRouter = require("./products");
 const cors = require("cors");
-const listEndpoints = require("express-list-endpoints");
-
-const booksRoutes = require("./services/books");
-
+const { join } = require("path");
 const {
   notFoundHandler,
+  unauthorizedHandler,
+  forbiddenHandler,
   badRequestHandler,
-  genericErrorHandler,
-} = require("./errorHandlers");
+  catchAllHandler,
+} = require("./lib/errorHandling");
 
 const server = express();
-
-const port = process.env.PORT || 3001; // the fallback is for local development, heroku will use his own port, something like 12312, because imagine how many processes are running on the same machine there
+const port = 3077;
 
 server.use(cors());
 server.use(express.json());
 
-//ROUTES
+server.use(
+  "/images",
+  express.static(join(__dirname, "../public/img/products"))
+);
 
-server.use("/books", booksRoutes);
+server.use("/products", productsRouter);
+server.use("/carts", cartsRoutes);
+server.use("/files", fileRoutes);
 
-// ERROR HANDLERS
-server.use(badRequestHandler);
 server.use(notFoundHandler);
-server.use(genericErrorHandler);
-
-console.log(listEndpoints(server));
+server.use(unauthorizedHandler);
+server.use(forbiddenHandler);
+server.use(badRequestHandler);
+server.use(catchAllHandler);
 
 server.listen(port, () => {
-  if (process.env.NODE_ENV === "production") {
-    console.log("Running on cloud on port", port);
-  } else {
-    console.log("Running locally on port", port);
-  }
+  console.log("Server running away on port: ", port);
 });
