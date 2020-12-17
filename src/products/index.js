@@ -3,6 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const uniqid = require("uniqid");
 const reviewsRoutes = require("../reviews");
+const { begin } = require("xmlbuilder");
 
 const { readDB } = require("../lib/utilities");
 
@@ -132,6 +133,27 @@ router.get("/sum/TwoPrices", async (req, res, next) => {
     //B) CREATE XML VARIABLE ACCORDING TO WEBSITES REQUEST STRUCTURE
     //C) SEND REQUEST TO WEBSITE VIA AXIOS
     //D) TURN RESULT TO JSON, SEND AS RESPONSE TO CLIENT
+
+    //AAAAAAAAAAAAAAAAAAAAA
+
+    const { id1, id2 } = req.query; //http://localhost:6969/products?id1={a products id}&id2={a diff products id}
+
+    //BBBBBBBBBBBBBBBBBBBBBB
+
+    const xmlBodyThatWeAreGonnaSendToExternalWebsite = begin()
+      .ele("soap:Envelope", {
+        "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+        "xmlns:xsd": "http://www.w3.org/2001/XMLSchema",
+        "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+      })
+      .ele("soap:Body")
+      .ele("Add", { xmlns: "http://tempuri.org/" })
+      .ele("intA")
+      .text(id1Price)
+      .up()
+      .ele("intB")
+      .text(id2Price)
+      .end();
   } catch (error) {
     console.log(error);
     next(error);
