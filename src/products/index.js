@@ -4,6 +4,9 @@ const path = require("path");
 const uniqid = require("uniqid");
 const reviewsRoutes = require("../reviews");
 const { begin } = require("xmlbuilder");
+const axios = require("axios");
+const { parseString } = require("xml2js");
+const { promisify } = require("util");
 
 const { readDB } = require("../lib/utilities");
 
@@ -138,6 +141,11 @@ router.get("/sum/TwoPrices", async (req, res, next) => {
 
     const { id1, id2 } = req.query; //http://localhost:6969/products?id1={a products id}&id2={a diff products id}
 
+    const productDB = await readDatabase(); //GETTING PRODUCT DATABASE
+
+    const product1 = productDB.find((product) => product._id === id1);
+    const product2 = productDB.find((product) => product._id === id2);
+
     //BBBBBBBBBBBBBBBBBBBBBB
 
     const xmlBodyThatWeAreGonnaSendToExternalWebsite = begin()
@@ -149,11 +157,39 @@ router.get("/sum/TwoPrices", async (req, res, next) => {
       .ele("soap:Body")
       .ele("Add", { xmlns: "http://tempuri.org/" })
       .ele("intA")
-      .text(id1Price)
+      .text(parseInt(product1.price))
       .up()
       .ele("intB")
-      .text(id2Price)
+      .text(parseInt(product2.price))
       .end();
+
+    //CCCCCCCCCCCCCCCCCCCCCC
+
+    const response = await axios({
+      method: "post",
+      url: "http://www.dneonline.com/calculator.asmx?op=Add",
+      data: xmlBodyThatWeAreGonnaSendToExternalWebsite,
+      headers: { "Content-type": "text/xml" },
+    });
+
+    console.log(response); //THIS RESPONSE IS RETURNED IN A STRING
+
+    //DDDDDDDDDDDDDDDDDDDD
+
+    const asyncParser = promisify(parseString);
+    //parseString: TAKES AN XML STRING AND TURNS IT INTO A JSON
+    //promisify: MAKES parseString A PROMISE SO I CAN WORK ASYNCHRONOUSLY
+
+    const xml = response.data; //GETTING RESPONSE VALUE OUT OF A PROP/KEY PAIR OF AN OBJECT
+
+    const parsedJS = await asyncParser(xml); //ASYNCHORNOUSLY TURNS STRING INTO JS
+
+    const addedResult =
+      parsedJS["soap:Envelope"]["soap:Body"][0]["AddResponse"][0][
+        "AddResult"
+      ][0];
+
+    res.send(addedResult);
   } catch (error) {
     console.log(error);
     next(error);
