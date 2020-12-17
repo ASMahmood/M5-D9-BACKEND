@@ -8,6 +8,10 @@ const axios = require("axios");
 const { parseString } = require("xml2js");
 const { promisify } = require("util");
 
+const { createReadStream } = require("fs-extra");
+const { Transform } = require("json2csv");
+const { pipeline } = require("stream");
+
 const { readDB } = require("../lib/utilities");
 
 const router = express.Router();
@@ -184,12 +188,70 @@ router.get("/sum/TwoPrices", async (req, res, next) => {
 
     const parsedJS = await asyncParser(xml); //ASYNCHORNOUSLY TURNS STRING INTO JS
 
+    //PARSED JSON LOOKS LIKE THIS:{
+    //   "soap:Envelope": {
+    //     "$": {
+    //         "xmlns:soap": "http://schemas.xmlsoap.org/soap/envelope/",
+    //         "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    //         "xmlns:xsd": "http://www.w3.org/2001/XMLSchema"
+    //     },
+    //     "soap:Body": [
+    //         {
+    //             "AddResponse": [
+    //                 {
+    //                     "$": {
+    //                         "xmlns": "http://tempuri.org/"
+    //                     },
+    //                     "AddResult": [
+    //                         "103"
+    //                     ]
+    //                 }
+    //             ]
+    //         }
+    //     ]
+    // }
+    // }
+    // SO WE NEED TO USE parsedJS["soap:Envelope"]["soap:Body"][0]["AddResponse"][0]["AddResult"][0];
+    // TO GET JUST THE ADDED RESULT VALUE
+
     const addedResult =
       parsedJS["soap:Envelope"]["soap:Body"][0]["AddResponse"][0][
         "AddResult"
       ][0];
 
     res.send(addedResult);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+router.get("/export/CSV", async (req, res, next) => {
+  try {
+    const source = createReadStream(productsFilePath); // DEFINES PATH AS THE FILE WE'RE GONNA COPY
+
+    const transformJsonIntoCsv = new Transform({
+      fields: [
+        "name",
+        "description",
+        "brand",
+        "price",
+        "category",
+        "_id",
+        "image",
+      ],
+    });
+
+    res.setHeader("Content-Disposition", "attachment; filename=products.csv");
+
+    pipeline(source, transformJsonIntoCsv, res, (err) => {
+      if (err) {
+        console.log(err);
+        next(err);
+      } else {
+        console.log("fucken done");
+      }
+    });
   } catch (error) {
     console.log(error);
     next(error);
