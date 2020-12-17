@@ -125,4 +125,17 @@ router.get("/:id/reviews", async (req, res, next) => {
   }
 });
 
+router.get("/sum/TwoPrices", async (req, res, next) => {
+  try {
+    //WE NEED TO ADD TWO PRICES USING AN EXTENAL WEBSITE THAT ONLY ACCEPTS XMLS
+    //A) GET PRICES FROM THE IDS GIVEN IN REQ.QUERY
+    //B) CREATE XML VARIABLE ACCORDING TO WEBSITES REQUEST STRUCTURE
+    //C) SEND REQUEST TO WEBSITE VIA AXIOS
+    //D) TURN RESULT TO JSON, SEND AS RESPONSE TO CLIENT
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
 module.exports = router;
