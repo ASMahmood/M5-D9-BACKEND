@@ -3,6 +3,8 @@ const cartsRoutes = require("./carts");
 const fileRoutes = require("./files/upload");
 const productsRouter = require("./products");
 const cors = require("cors");
+const swaggerUI = require("swagger-ui-express");
+const yaml = require("yamljs");
 const { join } = require("path");
 const {
   notFoundHandler,
